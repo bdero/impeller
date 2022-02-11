@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/time/time_point.h"
+#include "flutter/impeller/fixtures/bdero.frag.h"
+#include "flutter/impeller/fixtures/bdero.vert.h"
 #include "flutter/impeller/fixtures/box_fade.frag.h"
 #include "flutter/impeller/fixtures/box_fade.vert.h"
 #include "flutter/impeller/fixtures/test_texture.frag.h"
@@ -84,6 +86,73 @@ TEST_F(RendererTest, CanCreateBoxPrimitive) {
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     FS::BindContents1(cmd, boston, sampler);
     FS::BindContents2(cmd, bridge, sampler);
+
+    cmd.primitive_type = PrimitiveType::kTriangle;
+    if (!pass.AddCommand(std::move(cmd))) {
+      return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_F(RendererTest, bderotest) {
+  using VS = BderoVertexShader;
+  using FS = BderoFragmentShader;
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  using BoxPipelineBuilder = PipelineBuilder<VS, FS>;
+  auto desc = BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto box_pipeline =
+      context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+  ASSERT_TRUE(box_pipeline);
+
+  // Vertex buffer.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  float WIDTH = 1024;
+  float HEIGHT = 768;
+  vertex_builder.AddVertices({
+      {{0, 0, 0.0}, {0.0, 0.0}},           // 1
+      {{WIDTH, 0, 0.0}, {1.0, 0.0}},       // 2
+      {{WIDTH, HEIGHT, 0.0}, {1.0, 1.0}},  // 3
+      {{0, 0, 0.0}, {0.0, 0.0}},           // 1
+      {{WIDTH, HEIGHT, 0.0}, {1.0, 1.0}},  // 3
+      {{0, HEIGHT, 0.0}, {0.0, 1.0}},      // 4
+  });
+  auto vertex_buffer =
+      vertex_builder.CreateVertexBuffer(*context->GetPermanentsAllocator());
+  ASSERT_TRUE(vertex_buffer);
+
+  auto reflection_map = CreateTextureForFixture("bay_bridge.jpg");
+  auto bluenoise_map = CreateTextureForFixture("WhiteNoiseFFT.png");
+  ASSERT_TRUE(reflection_map && bluenoise_map);
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+  Renderer::RenderCallback callback = [&](RenderPass& pass) {
+    Command cmd;
+    cmd.label = "Box";
+    cmd.pipeline = box_pipeline;
+
+    cmd.BindVertices(vertex_buffer);
+
+    VS::UniformBuffer uniforms;
+    uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+    VS::BindUniformBuffer(cmd,
+                          pass.GetTransientsBuffer().EmplaceUniform(uniforms));
+
+    FS::FrameInfo frame_info;
+    frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    frame_info.cursor_position = GetCursorPosition();
+    frame_info.window_size.x = GetWindowSize().width;
+    frame_info.window_size.y = GetWindowSize().height;
+
+    FS::BindFrameInfo(cmd,
+                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+    FS::BindIChannel0(cmd, reflection_map, sampler);
+    FS::BindIChannel1(cmd, bluenoise_map, sampler);
 
     cmd.primitive_type = PrimitiveType::kTriangle;
     if (!pass.AddCommand(std::move(cmd))) {
