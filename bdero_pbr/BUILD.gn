@@ -1,0 +1,32 @@
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_shaders("shaders") {
+  name = "shaders"
+  shaders = [
+    "gbuffer.vert",
+    "gbuffer.frag",
+  ]
+}
+
+executable("bdero_pbr") {
+  sources = [
+    "renderer.cc",
+    "renderer.h",
+  ]
+
+  deps = [
+    ":shaders",
+    "imgui:imgui_glfw",
+    "//flutter/fml",
+    "//flutter/impeller/renderer",
+    "//third_party/glfw",
+  ]
+
+  if (is_mac) {
+    sources += [ "main_mtl.mm" ]
+    frameworks = [
+      "AppKit.framework",
+      "QuartzCore.framework",
+    ]
+  }
+}

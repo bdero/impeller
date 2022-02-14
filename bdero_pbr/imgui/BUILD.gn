@@ -1,0 +1,37 @@
+config("imgui_config") {
+  defines = [ "IMGUI_DISABLE_INCLUDE_IMCONFIG_H" ]
+}
+
+static_library("imgui") {
+  include_dirs = [
+    ".",
+    "//third_party/glfw/include",
+  ]
+
+  public_configs = [ ":imgui_config" ]
+
+  sources = [
+    "imgui.cpp",
+    "imgui.h",
+    "imgui_impl_glfw.cpp",
+    "imgui_impl_glfw.h",
+    "imgui_internal.h",
+    "imgui_tables.cpp",
+    "imgui_widgets.cpp",
+    "imstb_rectpack.h",
+    "imstb_textedit.h",
+    "imstb_truetype.h",
+  ]
+}
+
+static_library("imgui_glfw") {
+  public_deps = [
+    ":imgui",
+    "//third_party/glfw",
+  ]
+
+  sources = [
+    "imgui_impl_glfw.cpp",
+    "imgui_impl_glfw.h",
+  ]
+}
