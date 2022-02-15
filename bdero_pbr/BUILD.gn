@@ -10,6 +10,8 @@ impeller_shaders("shaders") {
 
 executable("bdero_pbr") {
   sources = [
+    "imgui_particle_text.cpp",
+    "imgui_particle_text.h",
     "renderer.cc",
     "renderer.h",
   ]
