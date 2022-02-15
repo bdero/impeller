@@ -1,20 +1,24 @@
-config("imgui_config") {
-  defines = [ "IMGUI_DISABLE_INCLUDE_IMCONFIG_H" ]
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_shaders("imgui_shaders") {
+  name = "imgui_shaders"
+  shaders = [
+    "imgui_raster.vert",
+    "imgui_raster.frag",
+  ]
 }
 
-static_library("imgui") {
+source_set("imgui") {
   include_dirs = [
     ".",
     "//third_party/glfw/include",
   ]
 
-  public_configs = [ ":imgui_config" ]
-
   sources = [
+    "imconfig.h",
     "imgui.cpp",
     "imgui.h",
-    "imgui_impl_glfw.cpp",
-    "imgui_impl_glfw.h",
+    "imgui_draw.cpp",
     "imgui_internal.h",
     "imgui_tables.cpp",
     "imgui_widgets.cpp",
@@ -24,7 +28,7 @@ static_library("imgui") {
   ]
 }
 
-static_library("imgui_glfw") {
+source_set("glfw") {
   public_deps = [
     ":imgui",
     "//third_party/glfw",
@@ -34,4 +38,23 @@ static_library("imgui_glfw") {
     "imgui_impl_glfw.cpp",
     "imgui_impl_glfw.h",
   ]
+}
+
+source_set("impeller_backend") {
+  public_deps = [
+    ":imgui",
+    ":imgui_shaders",
+  ]
+
+  deps = [ "//flutter/impeller/renderer" ]
+
+  sources = [
+    "imgui_impl_impeller.cc",
+    "imgui_impl_impeller.h",
+  ]
+}
+source_set("demo") {
+  deps = [ ":imgui" ]
+
+  sources = [ "imgui_demo.cpp" ]
 }

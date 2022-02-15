@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "imgui/imgui_impl_impeller.h"
+#include "imgui/imgui_shaders.h"
 #include "shaders.h"
 
 #include "flutter/fml/logging.h"
@@ -16,6 +18,8 @@ std::vector<std::shared_ptr<fml::Mapping>> Renderer::GetShaderMappings() {
   return {
       std::make_shared<fml::NonOwnedMapping>(impeller_shaders_data,
                                              impeller_shaders_length),
+      std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_data,
+                                             impeller_imgui_shaders_length),
   };
 }
 
@@ -29,9 +33,13 @@ Renderer::Renderer(std::shared_ptr<impeller::Context> context,
   }
 
   is_valid_ = true;
+
+  ImGui_ImplImpeller_Init(context_);
 }
 
-Renderer::~Renderer() = default;
+Renderer::~Renderer() {
+  ImGui_ImplImpeller_Shutdown();
+}
 
 bool Renderer::IsValid() const {
   return is_valid_;
@@ -62,7 +70,15 @@ bool Renderer::Render(std::unique_ptr<impeller::Surface> surface) const {
   }
 
   render_pass->SetLabel("Main pass");
-  // [[[render callback was here]]]
+
+  // ImGui stuff
+  ImGui::NewFrame();
+
+  bool show_demo_window = true;
+  ImGui::ShowDemoWindow(&show_demo_window);
+
+  ImGui::Render();
+  ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), *render_pass);
 
   if (!render_pass->EncodeCommands(*GetContext()->GetTransientsAllocator())) {
     return false;

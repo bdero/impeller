@@ -5,6 +5,8 @@
 #include "shaders.h"
 
 #include "flutter/fml/closure.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/surface_mtl.h"
@@ -19,8 +21,13 @@
 #include <QuartzCore/QuartzCore.h>
 
 int main() {
-  bdero::Renderer renderer(
-      impeller::ContextMTL::Create(bdero::Renderer::GetShaderMappings()));
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  fml::ScopedCleanupClosure destroy_imgui_context(
+      []() { ImGui::DestroyContext(); });
+  // ImGuiIO& io = ImGui::GetIO();
+
+  ImGui::StyleColorsDark();
 
   if (::glfwInit() != GLFW_TRUE) {
     std::cerr << "Failed to initialize GLFW." << std::endl;
@@ -38,6 +45,12 @@ int main() {
   fml::ScopedCleanupClosure close_window(
       [window]() { ::glfwDestroyWindow(window); });
 
+  ImGui_ImplGlfw_InitForOther(window, true);
+  fml::ScopedCleanupClosure shutdown_imgui([]() { ImGui_ImplGlfw_Shutdown(); });
+
+  bdero::Renderer renderer(
+      impeller::ContextMTL::Create(bdero::Renderer::GetShaderMappings()));
+
   NSWindow* cocoa_window = ::glfwGetCocoaWindow(window);
   CAMetalLayer* layer = [CAMetalLayer layer];
   layer.device =
@@ -54,6 +67,8 @@ int main() {
     if (::glfwWindowShouldClose(window)) {
       break;
     }
+
+    ImGui_ImplGlfw_NewFrame();
 
     const auto layer_size = layer.bounds.size;
     const auto layer_scale = layer.contentsScale;
