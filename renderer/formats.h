@@ -11,6 +11,8 @@
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"
+#include "geometry/rect.h"
+#include "geometry/scalar.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
