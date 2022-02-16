@@ -8,11 +8,13 @@
 
 #include "bdero_pbr/imgui/imconfig.h"
 #include "bdero_pbr/imgui/imgui.h"
-#include "geometry/matrix.h"
-#include "geometry/size.h"
 #include "imgui_raster.frag.h"
 #include "imgui_raster.vert.h"
 
+#include "impeller/geometry/matrix.h"
+#include "impeller/geometry/point.h"
+#include "impeller/geometry/rect.h"
+#include "impeller/geometry/size.h"
 #include "impeller/renderer/allocator.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/context.h"
@@ -127,6 +129,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
 
   // TODO(bdero): Once viewport setting is supported, set the projection matrix
   //              and viewport to respect the draw_data.Display[Pos|Size] rect.
+
   VS::UniformBuffer uniforms;
   uniforms.mvp =
       impeller::Matrix::MakeOrthographic(render_pass.GetRenderTargetSize());
@@ -154,17 +157,37 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
       IM_ASSERT(false && "Could not copy indices to buffer.");
     }
 
+    auto viewport = impeller::Viewport{
+        .rect =
+            impeller::Rect(draw_data->DisplayPos.x, draw_data->DisplayPos.y,
+                           draw_data->DisplaySize.x, draw_data->DisplaySize.y)};
+
     for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++) {
       const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
 
       if (pcmd->UserCallback) {
         pcmd->UserCallback(cmd_list, pcmd);
       } else {
+        // Project scissor/clipping rectangles into framebuffer space.
+        impeller::IPoint clip_min(pcmd->ClipRect.x - draw_data->DisplayPos.x,
+                                  pcmd->ClipRect.y - draw_data->DisplayPos.y);
+        impeller::IPoint clip_max(pcmd->ClipRect.z - draw_data->DisplayPos.x,
+                                  pcmd->ClipRect.w - draw_data->DisplayPos.y);
+        if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y) {
+          return;  // Nothing to render.
+        }
+
         impeller::Command cmd;
         cmd.label = impeller::SPrintF("ImGui draw list %d (command %d)",
                                       draw_list_i, cmd_i);
 
-        // cmd.winding = impeller::WindingOrder::kClockwise;
+        cmd.viewport = viewport;
+        cmd.scissor = impeller::IRect::MakeLTRB(
+            std::max(0ll, clip_min.x), std::max(0ll, clip_min.y),
+            std::min(render_pass.GetRenderTargetSize().width, clip_max.x),
+            std::min(render_pass.GetRenderTargetSize().height, clip_max.y));
+
+        cmd.winding = impeller::WindingOrder::kClockwise;
         cmd.pipeline = bd->pipeline;
         VS::BindUniformBuffer(
             cmd, render_pass.GetTransientsBuffer().EmplaceUniform(uniforms));
