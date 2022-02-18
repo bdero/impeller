@@ -2,7 +2,7 @@
 #include <math.h>
 
 #define IMGUI_DEFINE_MATH_OPERATORS  // Access to math operators
-#include "imgui/imgui_internal.h"
+#include "third_party/imgui/imgui_internal.h"
 
 #define IM_CLAMP(V, MN, MX) ((V) < (MN) ? (MN) : (V) > (MX) ? (MX) : (V))
 

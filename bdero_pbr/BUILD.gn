@@ -9,6 +9,8 @@ impeller_shaders("shaders") {
 }
 
 executable("bdero_pbr") {
+  testonly = true
+
   sources = [
     "imgui_particle_text.cpp",
     "imgui_particle_text.h",
@@ -18,12 +20,11 @@ executable("bdero_pbr") {
 
   deps = [
     ":shaders",
-    "imgui:demo",
-    "imgui:glfw",
     "imgui:impeller_backend",
     "//flutter/fml",
     "//flutter/impeller/renderer",
     "//third_party/glfw",
+    "//third_party/imgui:imgui_glfw",
   ]
 
   if (is_mac) {

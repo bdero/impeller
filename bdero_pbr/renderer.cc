@@ -2,11 +2,11 @@
 
 #include <algorithm>
 
-#include "bdero_pbr/imgui/imgui.h"
 #include "bdero_pbr/imgui_particle_text.h"
 #include "imgui/imgui_impl_impeller.h"
 #include "imgui/imgui_shaders.h"
 #include "shaders.h"
+#include "third_party/imgui/imgui.h"
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"

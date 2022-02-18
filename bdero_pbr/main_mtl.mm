@@ -5,12 +5,12 @@
 #include "shaders.h"
 
 #include "flutter/fml/closure.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/surface_mtl.h"
 #include "impeller/renderer/context.h"
+#include "third_party/imgui/backends/imgui_impl_glfw.h"
+#include "third_party/imgui/imgui.h"
 
 #define GLFW_INCLUDE_NONE
 #import "third_party/glfw/include/GLFW/glfw3.h"

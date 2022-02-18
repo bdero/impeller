@@ -41,9 +41,11 @@ source_set("glfw") {
 }
 
 source_set("impeller_backend") {
+  testonly = true
+
   public_deps = [
-    ":imgui",
     ":imgui_shaders",
+    "//third_party/imgui",
   ]
 
   deps = [ "//flutter/impeller/renderer" ]
