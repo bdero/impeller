@@ -174,7 +174,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         impeller::IPoint clip_max(pcmd->ClipRect.z - draw_data->DisplayPos.x,
                                   pcmd->ClipRect.w - draw_data->DisplayPos.y);
         if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y) {
-          return;  // Nothing to render.
+          continue;  // Nothing to render.
         }
 
         impeller::Command cmd;
@@ -206,6 +206,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
                 index_buffer_offset + pcmd->IdxOffset * sizeof(ImDrawIdx),
                 pcmd->ElemCount * sizeof(ImDrawIdx))};
         vertex_buffer.index_count = pcmd->ElemCount;
+        vertex_buffer.index_type = impeller::IndexType::k16bit;
         cmd.BindVertices(vertex_buffer);
         cmd.primitive_type = impeller::PrimitiveType::kTriangle;
 
