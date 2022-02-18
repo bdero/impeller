@@ -8,38 +8,6 @@ impeller_shaders("imgui_shaders") {
   ]
 }
 
-source_set("imgui") {
-  include_dirs = [
-    ".",
-    "//third_party/glfw/include",
-  ]
-
-  sources = [
-    "imconfig.h",
-    "imgui.cpp",
-    "imgui.h",
-    "imgui_draw.cpp",
-    "imgui_internal.h",
-    "imgui_tables.cpp",
-    "imgui_widgets.cpp",
-    "imstb_rectpack.h",
-    "imstb_textedit.h",
-    "imstb_truetype.h",
-  ]
-}
-
-source_set("glfw") {
-  public_deps = [
-    ":imgui",
-    "//third_party/glfw",
-  ]
-
-  sources = [
-    "imgui_impl_glfw.cpp",
-    "imgui_impl_glfw.h",
-  ]
-}
-
 source_set("impeller_backend") {
   testonly = true
 
@@ -54,9 +22,4 @@ source_set("impeller_backend") {
     "imgui_impl_impeller.cc",
     "imgui_impl_impeller.h",
   ]
-}
-source_set("demo") {
-  deps = [ ":imgui" ]
-
-  sources = [ "imgui_demo.cpp" ]
 }
