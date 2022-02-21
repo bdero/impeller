@@ -8,7 +8,7 @@ impeller_shaders("imgui_shaders") {
   ]
 }
 
-source_set("impeller_backend") {
+source_set("imgui_impeller_backend") {
   testonly = true
 
   public_deps = [

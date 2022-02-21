@@ -10,6 +10,8 @@
 #include "flutter/testing/testing.h"
 #include "impeller/base/validation.h"
 #include "impeller/image/compressed_image.h"
+#include "impeller/playground/imgui/imgui_impl_impeller.h"
+#include "impeller/playground/imgui/imgui_shaders.h"
 #include "impeller/playground/playground.h"
 #include "impeller/renderer/allocator.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
@@ -38,6 +40,8 @@ ShaderLibraryMappingsForPlayground() {
                                              impeller_entity_shaders_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_shader_fixtures_data,
                                              impeller_shader_fixtures_length),
+      std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_data,
+                                             impeller_imgui_shaders_length),
 
   };
 }

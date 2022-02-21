@@ -20,7 +20,7 @@ executable("bdero_pbr") {
 
   deps = [
     ":shaders",
-    "imgui:impeller_backend",
+    "../playground/imgui:imgui_impeller_backend",
     "//flutter/fml",
     "//flutter/impeller/renderer",
     "//third_party/glfw",
