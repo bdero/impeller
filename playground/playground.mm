@@ -22,6 +22,8 @@
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/renderer.h"
+#include "third_party/imgui/backends/imgui_impl_glfw.h"
+#include "third_party/imgui/imgui.h"
 
 #define GLFW_INCLUDE_NONE
 #import "third_party/glfw/include/GLFW/glfw3.h"
@@ -97,6 +99,13 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
     return false;
   }
 
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  fml::ScopedCleanupClosure destroy_imgui_context(
+      []() { ImGui::DestroyContext(); });
+
+  ImGui::StyleColorsDark();
+
   if (::glfwInit() != GLFW_TRUE) {
     return false;
   }
@@ -133,6 +142,13 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
   fml::ScopedCleanupClosure close_window(
       [window]() { ::glfwDestroyWindow(window); });
 
+  ImGui_ImplGlfw_InitForOther(window, true);
+  fml::ScopedCleanupClosure shutdown_imgui([]() { ImGui_ImplGlfw_Shutdown(); });
+
+  ImGui_ImplImpeller_Init(renderer_.GetContext());
+  fml::ScopedCleanupClosure shutdown_imgui_impeller(
+      []() { ImGui_ImplImpeller_Shutdown(); });
+
   NSWindow* cocoa_window = ::glfwGetCocoaWindow(window);
   CAMetalLayer* layer = [CAMetalLayer layer];
   layer.device = ContextMTL::Cast(*renderer_.GetContext()).GetMTLDevice();
@@ -148,6 +164,8 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
       return true;
     }
 
+    ImGui_ImplGlfw_NewFrame();
+
     const auto layer_size = layer.bounds.size;
     const auto layer_scale = layer.contentsScale;
     layer.drawableSize = CGSizeMake(layer_size.width * layer_scale,
@@ -155,7 +173,12 @@ bool Playground::OpenPlaygroundHere(Renderer::RenderCallback render_callback) {
 
     Renderer::RenderCallback wrapped_callback = [render_callback](auto& pass) {
       pass.SetLabel("Playground Main Render Pass");
-      return render_callback(pass);
+
+      ImGui::NewFrame();
+      bool result = render_callback(pass);
+      ImGui::Render();
+      ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), pass);
+      return result;
     };
 
     if (!renderer_.Render(SurfaceMTL::WrapCurrentMetalLayerDrawable(
