@@ -101,6 +101,59 @@ template("metal_library") {
   }
 }
 
+template("glsl_library") {
+  assert(defined(invoker.name), "GLSL library name must be specified.")
+  assert(defined(invoker.sources), "GLSL source files must be specified.")
+
+  glsl_library_name = invoker.name
+
+  action("$target_name") {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "inputs",
+                             "outputs",
+                             "script",
+                             "depfile",
+                             "args",
+                           ])
+
+    inputs = invoker.sources
+
+    glsl_library_path = "$root_out_dir/shaders/$glsl_library_name.glsllib"
+
+    outputs = [ glsl_library_path ]
+
+    script = "//flutter/impeller/tools/build_glsl_library.py"
+
+    depfile = "$target_gen_dir/shader_deps/$glsl_library_name.depfile"
+
+    args = [
+      "--output",
+      rebase_path(glsl_library_path, root_out_dir),
+      "--depfile",
+      rebase_path(depfile),
+    ]
+
+    if (!is_debug) {
+      args += [ "--optimize" ]
+    }
+
+    if (is_android) {
+      args += [ "--platform=android" ]
+    } else {
+      assert(false, "Unsupported platform for generating glsl shaders.")
+    }
+
+    foreach(source, invoker.sources) {
+      args += [
+        "--source",
+        rebase_path(source, root_out_dir),
+      ]
+    }
+  }
+}
+
 template("impeller_shaders") {
   assert(defined(invoker.shaders), "Impeller shaders must be specified.")
   assert(defined(invoker.name), "Name of the shader library must be specified.")
@@ -113,6 +166,7 @@ template("impeller_shaders") {
     sources = invoker.shaders
 
     metal_intermediate = "$target_gen_dir/{{source_file_part}}.metal"
+    glsl_intermediate = "$target_gen_dir/{{source_file_part}}.glsl"
     spirv_intermediate = "$target_gen_dir/{{source_file_part}}.spirv"
     reflection_json_intermediate = "$target_gen_dir/{{source_file_part}}.json"
     reflection_header_intermediate = "$target_gen_dir/{{source_file_part}}.h"
@@ -127,6 +181,7 @@ template("impeller_shaders") {
     depfile_path = "$target_gen_dir/{{source_file_part}}.d"
 
     metal_intermediate_path = rebase_path(metal_intermediate, root_build_dir)
+    glsl_intermediate_path = rebase_path(glsl_intermediate, root_build_dir)
     spirv_intermediate_path = rebase_path(spirv_intermediate, root_build_dir)
     depfile_intermediate_path = rebase_path(depfile_path, root_build_dir)
 
@@ -141,6 +196,7 @@ template("impeller_shaders") {
     args = [
       "--input={{source}}",
       "--metal=$metal_intermediate_path",
+      "--glsl=$glsl_intermediate_path",
       "--spirv=$spirv_intermediate_path",
       "--reflection-json=$reflection_json_path",
       "--reflection-header=$reflection_header_path",
@@ -155,6 +211,9 @@ template("impeller_shaders") {
     if (is_ios) {
       args += [ "--ios" ]
     }
+    if (is_android) {
+      args += [ "--android" ]
+    }
   }
 
   metal_library_target_name = "metal_library_$target_name"
@@ -162,6 +221,14 @@ template("impeller_shaders") {
     name = invoker.name
     sources = filter_include(get_target_outputs(":$impellerc_target_name"),
                              [ "*.metal" ])
+    deps = [ ":$impellerc_target_name" ]
+  }
+
+  glsl_library_target_name = "glsl_library_$target_name"
+  glsl_library(glsl_library_target_name) {
+    name = invoker.name
+    sources = filter_include(get_target_outputs(":$impellerc_target_name"),
+                             [ "*.glsl" ])
     deps = [ ":$impellerc_target_name" ]
   }
 
