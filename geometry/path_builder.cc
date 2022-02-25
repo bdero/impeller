@@ -27,6 +27,7 @@ Path PathBuilder::TakePath(FillType fill) {
 PathBuilder& PathBuilder::MoveTo(Point point, bool relative) {
   current_ = relative ? current_ + point : point;
   subpath_start_ = current_;
+  prototype_.AddPathSegment();
   return *this;
 }
 

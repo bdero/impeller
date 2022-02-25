@@ -70,7 +70,7 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   auto vertices_builder = VertexBufferBuilder<VS::PerVertexData>();
   {
     auto result = Tessellator{entity.GetPath().GetFillType()}.Tessellate(
-        entity.GetPath().CreatePolyline(), [&vertices_builder](Point point) {
+        entity.GetPath().CreatePolyline(0), [&vertices_builder](Point point) {
           VS::PerVertexData vtx;
           vtx.vertices = point;
           vertices_builder.AppendVertex(vtx);
@@ -126,7 +126,7 @@ static VertexBuffer CreateSolidFillVertices(const Path& path,
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
 
   auto tesselation_result = Tessellator{path.GetFillType()}.Tessellate(
-      path.CreatePolyline(), [&vtx_builder](auto point) {
+      path.CreatePolyline(0), [&vtx_builder](auto point) {
         VS::PerVertexData vtx;
         vtx.vertices = point;
         vtx_builder.AppendVertex(vtx);
@@ -228,15 +228,14 @@ bool TextureContents::Render(const ContentContext& renderer,
   {
     const auto tess_result =
         Tessellator{entity.GetPath().GetFillType()}.Tessellate(
-            entity.GetPath().CreatePolyline(),
+            entity.GetPath().CreatePolyline(0),
             [this, &vertex_builder, &coverage_rect, &texture_size](Point vtx) {
               VS::PerVertexData data;
               data.vertices = vtx;
               auto coverage_coords =
                   (vtx - coverage_rect->origin) / coverage_rect->size;
               data.texture_coords =
-                  (source_rect_.origin +
-                   source_rect_.size * coverage_coords) /
+                  (source_rect_.origin + source_rect_.size * coverage_coords) /
                   texture_size;
               vertex_builder.AppendVertex(data);
             });
@@ -299,35 +298,38 @@ static VertexBuffer CreateSolidStrokeVertices(const Path& path,
   using VS = SolidStrokeVertexShader;
 
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-  auto polyline = path.CreatePolyline();
 
-  for (size_t i = 0, polyline_size = polyline.size(); i < polyline_size; i++) {
-    const auto is_last_point = i == polyline_size - 1;
+  for (size_t seg = 0; seg < path.GetSegmentCount(); seg++) {
+    auto polyline = path.CreatePolyline(seg);
+    for (size_t i = 0, polyline_size = polyline.size(); i < polyline_size;
+         i++) {
+      const auto is_last_point = i == polyline_size - 1;
 
-    const auto& p1 = polyline[i];
-    const auto& p2 = is_last_point ? polyline[i - 1] : polyline[i + 1];
+      const auto& p1 = polyline[i];
+      const auto& p2 = is_last_point ? polyline[i - 1] : polyline[i + 1];
 
-    const auto diff = p2 - p1;
+      const auto diff = p2 - p1;
 
-    const Scalar direction = is_last_point ? -1.0 : 1.0;
+      const Scalar direction = is_last_point ? -1.0 : 1.0;
 
-    const auto normal =
-        Point{-diff.y * direction, diff.x * direction}.Normalize();
+      const auto normal =
+          Point{-diff.y * direction, diff.x * direction}.Normalize();
 
-    VS::PerVertexData vtx;
-    vtx.vertex_position = p1;
+      VS::PerVertexData vtx;
+      vtx.vertex_position = p1;
 
-    if (i == 0) {
-      vtx.vertex_normal = -normal;
-      vtx_builder.AppendVertex(vtx);
+      //if (i == 0) {
+        vtx.vertex_normal = -normal;
+        vtx_builder.AppendVertex(vtx);
+        vtx.vertex_normal = normal;
+        vtx_builder.AppendVertex(vtx);
+      //}
+
       vtx.vertex_normal = normal;
       vtx_builder.AppendVertex(vtx);
+      vtx.vertex_normal = -normal;
+      vtx_builder.AppendVertex(vtx);
     }
-
-    vtx.vertex_normal = normal;
-    vtx_builder.AppendVertex(vtx);
-    vtx.vertex_normal = -normal;
-    vtx_builder.AppendVertex(vtx);
   }
 
   return vtx_builder.CreateVertexBuffer(buffer);

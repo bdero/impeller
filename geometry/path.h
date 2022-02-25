@@ -44,6 +44,8 @@ class Path {
 
   size_t GetComponentCount() const;
 
+  size_t GetSegmentCount() const;
+
   void SetFillType(FillType fill);
 
   FillType GetFillType() const;
@@ -53,6 +55,8 @@ class Path {
   Path& AddQuadraticComponent(Point p1, Point cp, Point p2);
 
   Path& AddCubicComponent(Point p1, Point cp1, Point cp2, Point p2);
+
+  Path& AddPathSegment();
 
   template <class T>
   using Applier = std::function<void(size_t index, const T& component)>;
@@ -77,6 +81,7 @@ class Path {
   bool UpdateCubicComponentAtIndex(size_t index, CubicPathComponent& cubic);
 
   std::vector<Point> CreatePolyline(
+      uint32_t segment,
       const SmoothingApproximation& approximation = {}) const;
 
   std::optional<Rect> GetBoundingBox() const;
@@ -96,6 +101,9 @@ class Path {
 
   FillType fill_ = FillType::kNonZero;
   std::vector<ComponentIndexPair> components_;
+  // Indices in the component index that represent the start of a new path
+  // segment. Always in ascending order.
+  std::vector<size_t> segment_indices_;
   std::vector<LinearPathComponent> linears_;
   std::vector<QuadraticPathComponent> quads_;
   std::vector<CubicPathComponent> cubics_;

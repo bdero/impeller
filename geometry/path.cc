@@ -8,12 +8,18 @@
 
 namespace impeller {
 
-Path::Path() = default;
+Path::Path() {
+  segment_indices_ = {0};
+}
 
 Path::~Path() = default;
 
 size_t Path::GetComponentCount() const {
   return components_.size();
+}
+
+size_t Path::GetSegmentCount() const {
+  return segment_indices_.size();
 }
 
 void Path::SetFillType(FillType fill) {
@@ -39,6 +45,13 @@ Path& Path::AddQuadraticComponent(Point p1, Point cp, Point p2) {
 Path& Path::AddCubicComponent(Point p1, Point cp1, Point cp2, Point p2) {
   cubics_.emplace_back(p1, cp1, cp2, p2);
   components_.emplace_back(ComponentType::kCubic, cubics_.size() - 1);
+  return *this;
+}
+
+Path& Path::AddPathSegment() {
+  if (components_.size() > 0) {
+    segment_indices_.push_back(components_.size());
+  }
   return *this;
 }
 
@@ -156,13 +169,22 @@ bool Path::UpdateCubicComponentAtIndex(size_t index,
 }
 
 std::vector<Point> Path::CreatePolyline(
+    uint32_t segment,
     const SmoothingApproximation& approximation) const {
   std::vector<Point> points;
   auto collect_points = [&points](const std::vector<Point>& collection) {
     points.reserve(points.size() + collection.size());
     points.insert(points.end(), collection.begin(), collection.end());
   };
-  for (const auto& component : components_) {
+  if (segment >= segment_indices_.size()) {
+    return {};
+  }
+  size_t next_segment_start_index = (segment == segment_indices_.size() - 1)
+                                        ? components_.size()
+                                        : segment_indices_[segment + 1];
+  for (size_t i = segment_indices_[segment]; i < next_segment_start_index;
+       i++) {
+    const auto& component = components_[i];
     switch (component.type) {
       case ComponentType::kLinear:
         collect_points(linears_[component.index].CreatePolyline());
