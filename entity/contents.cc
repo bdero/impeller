@@ -318,12 +318,12 @@ static VertexBuffer CreateSolidStrokeVertices(const Path& path,
       VS::PerVertexData vtx;
       vtx.vertex_position = p1;
 
-      //if (i == 0) {
+      if (i == 0) {
         vtx.vertex_normal = -normal;
         vtx_builder.AppendVertex(vtx);
         vtx.vertex_normal = normal;
         vtx_builder.AppendVertex(vtx);
-      //}
+      }
 
       vtx.vertex_normal = normal;
       vtx_builder.AppendVertex(vtx);
